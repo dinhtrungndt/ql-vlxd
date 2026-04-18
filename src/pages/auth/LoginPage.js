@@ -14,14 +14,28 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { isAuthenticated, loading } = useSelector((state) => state.auth);
+  // Lấy thêm thông tin 'user' từ Redux state
+  const { isAuthenticated, loading, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/';
+    // Nếu đã đăng nhập thành công và có thông tin user
+    if (isAuthenticated && user) {
+      // Ưu tiên quay lại trang cũ nếu bị văng ra lúc trước
+      let from = location.state?.from?.pathname;
+
+      // Nếu không có trang cũ, hoặc trang cũ là trang chủ '/'
+      if (!from || from === '/') {
+        // Phân luồng thông minh theo Role
+        if (user.role === 'staff') {
+          from = '/inventory'; // Staff thì vào thẳng Quản lý kho
+        } else {
+          from = '/'; // Admin/Manager thì vào Tổng quan (Dashboard)
+        }
+      }
+
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [isAuthenticated, user, navigate, location]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

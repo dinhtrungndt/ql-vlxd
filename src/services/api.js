@@ -1,16 +1,16 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import config from '../config';
-import { loadSession, clearSession } from '../utils/storage';
+import { clearSession, loadSession } from '../utils/storage';
 
-// Tạo axios instance với base URL
 const api = axios.create({
   baseURL: config.API_V1,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000,
 });
 
-// Request interceptor: tự động gắn token vào header
 api.interceptors.request.use(
   (requestConfig) => {
     const session = loadSession();
@@ -22,17 +22,36 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: xử lý lỗi 401 (token hết hạn)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // 1. Xử lý lỗi mất kết nối mạng hoặc Backend sập
+    if (!error.response) {
+      toast.error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng!');
+      return Promise.reject(error);
+    }
+
+    // 2. Xử lý lỗi 401 (Token hết hạn hoặc sai)
+    if (error.response.status === 401) {
       clearSession();
-      // Redirect về login nếu không phải đang ở trang login
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+        toast.error('Phiên đăng nhập đã hết hạn!');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
       }
     }
+
+    // 3. Xử lý lỗi 403 (Không đủ quyền)
+    if (error.response.status === 403) {
+      toast.error('Bạn không có quyền thực hiện thao tác này!');
+    }
+
+    // 4. Xử lý lỗi 500 (Lỗi server nội bộ)
+    if (error.response.status >= 500) {
+      toast.error('Hệ thống đang gặp sự cố, vui lòng thử lại sau.');
+    }
+
     return Promise.reject(error);
   }
 );

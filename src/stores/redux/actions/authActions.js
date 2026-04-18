@@ -67,3 +67,29 @@ export const createEmployeeAction = (userData) => async (dispatch) => {
     return { success: false, message };
   }
 };
+
+// Cập nhật thông tin nhân viên
+export const updateEmployeeAction = (id, userData) => async (dispatch) => {
+  try {
+    const { data } = await api.put(`/auth/users/${id}`, userData);
+    toast.success('Cập nhật thông tin thành công');
+    return { success: true, data };
+  } catch (err) {
+    const message = err.response?.data?.detail || 'Cập nhật thất bại';
+    toast.error(message);
+    return { success: false, message };
+  }
+};
+
+// Khóa / Mở khóa tài khoản
+export const toggleUserStatusAction = (id) => async (dispatch) => {
+  try {
+    const { data } = await api.put(`/auth/users/${id}/toggle-status`);
+    toast.success(data.message || 'Đã thay đổi trạng thái tài khoản');
+    return { success: true };
+  } catch (err) {
+    const message = err.response?.data?.detail || 'Thao tác thất bại';
+    toast.error(message);
+    return { success: false, message };
+  }
+};
