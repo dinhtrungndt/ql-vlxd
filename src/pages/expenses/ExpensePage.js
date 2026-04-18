@@ -1,4 +1,4 @@
-import { EyeSlashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { EyeSlashIcon, PaperClipIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,7 +22,6 @@ const ExpensePage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [hideConfirmId, setHideConfirmId] = useState(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -30,6 +29,8 @@ const ExpensePage = () => {
     category: 'khac',
     date: new Date().toISOString().split('T')[0],
   });
+
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
     dispatch(getExpensesAction());
@@ -40,11 +41,19 @@ const ExpensePage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    setSelectedFiles(Array.from(e.target.files));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const form = new FormData();
     Object.keys(formData).forEach((key) => {
       form.append(key, formData[key]);
+    });
+
+    selectedFiles.forEach(file => {
+      form.append('files', file);
     });
 
     const res = await dispatch(createExpenseAction(form));
@@ -57,6 +66,7 @@ const ExpensePage = () => {
         category: 'khac',
         date: new Date().toISOString().split('T')[0],
       });
+      setSelectedFiles([]);
     }
   };
 
@@ -79,7 +89,7 @@ const ExpensePage = () => {
       render: (row) => (
         <div>
           <p className="font-semibold text-white">{row.title}</p>
-          {row.description && <p className="text-xs text-slate-400 mt-1 line-clamp-1">{row.description}</p>}
+          {row.description && <p className="mt-1 line-clamp-1 text-xs text-slate-400">{row.description}</p>}
         </div>
       ),
     },
@@ -185,6 +195,24 @@ const ExpensePage = () => {
               rows={3}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 p-2.5 text-sm text-white focus:border-blue-500 focus:outline-none"
             ></textarea>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-300">Đính kèm chứng từ/hóa đơn</label>
+            <div className="relative flex w-full items-center">
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="block w-full text-sm text-slate-400 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-700 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-600 focus:outline-none"
+              />
+              <PaperClipIcon className="pointer-events-none absolute right-3 top-2.5 h-5 w-5 text-slate-500" />
+            </div>
+            {selectedFiles.length > 0 && (
+              <p className="mt-2 text-xs text-emerald-400">
+                Đã chọn {selectedFiles.length} tệp đính kèm.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end pt-4">

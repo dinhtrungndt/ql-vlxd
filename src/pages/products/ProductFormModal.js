@@ -1,3 +1,4 @@
+import { PhotoIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import Button from '../../components/ui/Button';
@@ -8,6 +9,9 @@ import { createProductAction, updateProductAction } from '../../stores/redux/act
 const ProductFormModal = ({ isOpen, onClose, product = null }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -30,6 +34,8 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
           stock: product.stock || 0,
           description: product.description || '',
         });
+        setImagePreview(product.image || '');
+        setImageFile(null);
       } else {
         setFormData({
           name: '',
@@ -40,6 +46,8 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
           stock: 0,
           description: '',
         });
+        setImagePreview('');
+        setImageFile(null);
       }
     }
   }, [isOpen, product]);
@@ -47,6 +55,14 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -57,6 +73,10 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
     Object.keys(formData).forEach((key) => {
       form.append(key, formData[key]);
     });
+
+    if (imageFile) {
+      form.append('image_file', imageFile);
+    }
 
     let result;
     if (product) {
@@ -137,6 +157,32 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
             helperText="Nhập tồn kho nếu đang có sẵn hàng"
           />
         )}
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-sm font-medium text-slate-300">
+            Hình ảnh sản phẩm
+          </label>
+          <div className="mt-1 flex items-center gap-4">
+            <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-600 bg-slate-800">
+              {imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+              ) : (
+                <PhotoIcon className="h-8 w-8 text-slate-500" />
+              )}
+            </div>
+            <div className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="block w-full text-sm text-slate-400 file:mr-4 file:rounded-full file:border-0 file:bg-blue-600/20 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-400 hover:file:bg-blue-600/30"
+              />
+              <p className="mt-2 text-xs text-slate-500">
+                Chỉ chấp nhận file ảnh. Kích thước tối đa 5MB.
+              </p>
+            </div>
+          </div>
+        </div>
 
         <div className="mb-4">
           <label className="mb-1.5 block text-sm font-medium text-slate-300">

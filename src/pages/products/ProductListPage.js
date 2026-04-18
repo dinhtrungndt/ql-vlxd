@@ -1,4 +1,4 @@
-import { EyeSlashIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, MagnifyingGlassIcon, PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -8,6 +8,7 @@ import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Input from '../../components/ui/Input';
 import Table from '../../components/ui/Table';
+import ProductDetailModal from './ProductDetailModal';
 import ProductFormModal from './ProductFormModal';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -23,7 +24,8 @@ const ProductListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailId, setDetailId] = useState(null);
   const [hideConfirmId, setHideConfirmId] = useState(null);
 
   useEffect(() => {
@@ -45,6 +47,11 @@ const ProductListPage = () => {
     setIsFormOpen(true);
   };
 
+  const openDetailModal = (id) => {
+    setDetailId(id);
+    setIsDetailOpen(true);
+  };
+
   const handleHideProduct = async () => {
     if (hideConfirmId) {
       await dispatch(hideProductAction(hideConfirmId));
@@ -57,9 +64,14 @@ const ProductListPage = () => {
       header: 'Tên Vật Tư',
       accessor: 'name',
       render: (row) => (
-        <div>
-          <div className="font-semibold text-white">{row.name}</div>
-          <div className="text-xs text-slate-400">{row.sub_category || row.category}</div>
+        <div className="flex items-center gap-3">
+          {row.image && (
+            <img src={row.image} alt={row.name} className="h-10 w-10 rounded-md object-cover border border-slate-700" />
+          )}
+          <div>
+            <div className="font-semibold text-white">{row.name}</div>
+            <div className="text-xs text-slate-400">{row.sub_category || row.category}</div>
+          </div>
         </div>
       ),
     },
@@ -78,26 +90,32 @@ const ProductListPage = () => {
         </Badge>
       ),
     },
-    ...(canEdit
-      ? [
-        {
-          header: 'Hành Động',
-          accessor: 'actions',
-          className: 'text-right',
-          cellClassName: 'text-right',
-          render: (row) => (
-            <div className="flex justify-end gap-2">
-              <Button size="sm" variant="outline" onClick={() => openEditForm(row)}>
-                Sửa
+    {
+      header: 'Hành Động',
+      accessor: 'actions',
+      className: 'text-right',
+      cellClassName: 'text-right',
+      render: (row) => (
+        <div className="flex justify-end gap-2">
+          {/* Tất cả mọi người đều được Xem chi tiết */}
+          <Button size="sm" variant="ghost" onClick={() => openDetailModal(row.id)} className="text-blue-400 hover:bg-blue-500/20">
+            <EyeIcon className="h-4 w-4 mr-1" /> Xem
+          </Button>
+
+          {/* Chỉ Admin/Manager mới được sửa/xóa */}
+          {canEdit && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => openEditForm(row)} className="px-2">
+                <PencilSquareIcon className="h-4 w-4" title="Sửa" />
               </Button>
-              <Button size="sm" variant="danger" onClick={() => setHideConfirmId(row.id)}>
+              <Button size="sm" variant="danger" onClick={() => setHideConfirmId(row.id)} className="px-2">
                 <EyeSlashIcon className="h-4 w-4" title="Ẩn" />
               </Button>
-            </div>
-          ),
-        },
-      ]
-      : []),
+            </>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -114,12 +132,12 @@ const ProductListPage = () => {
         )}
       </div>
 
-      <div className="mb-6 rounded-lg bg-slate-900/50 p-4 border border-slate-800">
+      <div className="mb-6 rounded-lg bg-slate-900/50 p-4 border border-slate-800 shadow-sm">
         <form onSubmit={handleSearch} className="flex max-w-md items-end gap-3">
           <div className="flex-1">
             <Input
               name="search"
-              placeholder="Tìm kiếm vật tư..."
+              placeholder="Tìm kiếm vật tư theo tên..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="mb-0"
@@ -142,6 +160,12 @@ const ProductListPage = () => {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         product={editingProduct}
+      />
+
+      <ProductDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        productId={detailId}
       />
 
       <ConfirmDialog
