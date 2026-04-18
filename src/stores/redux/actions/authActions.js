@@ -2,16 +2,14 @@ import toast from 'react-hot-toast';
 import api from '../../../services/api';
 import { clearSession, saveSession } from '../../../utils/storage';
 import {
-  AUTH_GET_ME_FAILURE, AUTH_GET_ME_REQUEST,
-  AUTH_GET_ME_SUCCESS, AUTH_LOGIN_FAILURE, AUTH_LOGIN_REQUEST,
-  AUTH_LOGIN_SUCCESS, AUTH_LOGOUT
+  AUTH_GET_ME_FAILURE, AUTH_GET_ME_REQUEST, AUTH_GET_ME_SUCCESS,
+  AUTH_LOGIN_FAILURE, AUTH_LOGIN_REQUEST, AUTH_LOGIN_SUCCESS, AUTH_LOGOUT, USER_UPDATE_PROFILE_FAILURE, USER_UPDATE_PROFILE_REQUEST, USER_UPDATE_PROFILE_SUCCESS
 } from '../actionTypes';
 
 // Đăng nhập
 export const loginAction = (username, password) => async (dispatch) => {
   dispatch({ type: AUTH_LOGIN_REQUEST });
   try {
-    // FastAPI OAuth2PasswordRequestForm nhận form-urlencoded
     const formData = new URLSearchParams();
     formData.append('username', username);
     formData.append('password', password);
@@ -21,17 +19,11 @@ export const loginAction = (username, password) => async (dispatch) => {
     });
 
     const token = data.access_token;
-
-    // Lưu token mã hóa vào localStorage
     saveSession({ token });
-
     dispatch({ type: AUTH_LOGIN_SUCCESS, payload: { token } });
-
-    // Lấy thông tin user sau khi đăng nhập
     dispatch(getMeAction());
   } catch (err) {
-    const message =
-      err.response?.data?.detail || 'Đăng nhập thất bại. Kiểm tra lại tài khoản / mật khẩu.';
+    const message = err.response?.data?.detail || 'Đăng nhập thất bại. Kiểm tra lại tài khoản / mật khẩu.';
     dispatch({ type: AUTH_LOGIN_FAILURE, payload: message });
     toast.error(message);
   }
@@ -68,7 +60,7 @@ export const createEmployeeAction = (userData) => async (dispatch) => {
   }
 };
 
-// Cập nhật thông tin nhân viên
+// Admin Cập nhật thông tin nhân viên
 export const updateEmployeeAction = (id, userData) => async (dispatch) => {
   try {
     const { data } = await api.put(`/auth/users/${id}`, userData);
@@ -81,7 +73,7 @@ export const updateEmployeeAction = (id, userData) => async (dispatch) => {
   }
 };
 
-// Khóa / Mở khóa tài khoản
+// Admin Khóa / Mở khóa tài khoản
 export const toggleUserStatusAction = (id) => async (dispatch) => {
   try {
     const { data } = await api.put(`/auth/users/${id}/toggle-status`);
@@ -89,6 +81,23 @@ export const toggleUserStatusAction = (id) => async (dispatch) => {
     return { success: true };
   } catch (err) {
     const message = err.response?.data?.detail || 'Thao tác thất bại';
+    toast.error(message);
+    return { success: false, message };
+  }
+};
+
+// Người dùng TỰ cập nhật hồ sơ & đổi mật khẩu
+export const updateProfileAction = (profileData) => async (dispatch) => {
+  dispatch({ type: USER_UPDATE_PROFILE_REQUEST });
+  try {
+    const { data } = await api.put('/auth/me', profileData);
+    dispatch({ type: USER_UPDATE_PROFILE_SUCCESS, payload: data });
+    dispatch({ type: AUTH_GET_ME_SUCCESS, payload: data });
+    toast.success('Cập nhật hồ sơ thành công');
+    return { success: true };
+  } catch (err) {
+    const message = err.response?.data?.detail || 'Cập nhật thất bại';
+    dispatch({ type: USER_UPDATE_PROFILE_FAILURE, payload: message });
     toast.error(message);
     return { success: false, message };
   }

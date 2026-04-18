@@ -1,9 +1,9 @@
-import React from 'react';
+import { ArrowRightOnRectangleIcon, Bars3Icon, UserIcon } from '@heroicons/react/24/outline';
 import { useDispatch } from 'react-redux';
-import { Bars3Icon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { logoutAction } from '../../stores/redux/actions/authActions';
-import { getRoleName, getRoleBadgeClass } from '../../utils/helpers';
+import { getRoleBadgeClass, getRoleName } from '../../utils/helpers';
 import Badge from '../ui/Badge';
 
 const Header = ({ onMenuClick }) => {
@@ -26,7 +26,7 @@ const Header = ({ onMenuClick }) => {
         <span className="text-sm font-medium lg:hidden">Menu</span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         {user && (
           <div className="hidden flex-col items-end sm:flex text-right mr-2">
             <span className="text-sm font-semibold text-white">{user.name}</span>
@@ -36,9 +36,20 @@ const Header = ({ onMenuClick }) => {
           </div>
         )}
 
+        {/* Nút Hồ Sơ */}
+        <Link
+          to="/profile"
+          className="flex items-center rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-blue-600 hover:text-white transition-colors"
+          title="Hồ sơ cá nhân"
+        >
+          <UserIcon className="h-5 w-5 sm:mr-2" />
+          <span className="hidden sm:inline">Hồ sơ</span>
+        </Link>
+
+        {/* Nút Đăng Xuất */}
         <button
           onClick={handleLogout}
-          className="flex items-center rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white hover:text-red-400 transition-colors"
+          className="flex items-center rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-red-600 hover:text-white transition-colors"
           title="Đăng xuất"
         >
           <ArrowRightOnRectangleIcon className="h-5 w-5 sm:mr-2" />

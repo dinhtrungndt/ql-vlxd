@@ -6,6 +6,7 @@ import RoleGuard from '../components/guards/RoleGuard';
 
 // Pages
 import LoginPage from '../pages/auth/LoginPage';
+import ProfilePage from '../pages/auth/ProfilePage';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import ExpensePage from '../pages/expenses/ExpensePage';
 import InventoryIndexPage from '../pages/inventory/InventoryIndex';
@@ -22,6 +23,13 @@ const AppRouter = () => {
 
       {/* App Routes (Private) */}
       <Route path="/" element={<PrivateRoute />}>
+
+        {/* Route chung cho mọi người đã đăng nhập */}
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/products" element={<ProductListPage />} />
+        <Route path="/inventory" element={<InventoryIndexPage />} />
+        <Route path="/inventory/manage" element={<InventoryPage />} />
+        <Route path="/inventory/history" element={<TransactionHistoryPage />} />
 
         {/* Admin + Manager Routes */}
         <Route path="/" element={
@@ -47,13 +55,6 @@ const AppRouter = () => {
             <ReportPage />
           </RoleGuard>
         } />
-
-        {/* All Auth Users (Admin, Manager, Staff) */}
-        <Route path="/products" element={<ProductListPage />} />
-
-        <Route path="/inventory" element={<InventoryIndexPage />} />
-        <Route path="/inventory/manage" element={<InventoryPage />} />
-        <Route path="/inventory/history" element={<TransactionHistoryPage />} />
 
       </Route>
 
