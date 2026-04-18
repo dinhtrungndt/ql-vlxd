@@ -1,7 +1,6 @@
-import { DocumentMagnifyingGlassIcon, EyeSlashIcon, PaperClipIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { ArchiveBoxIcon, ArrowUturnLeftIcon, EyeIcon, EyeSlashIcon, PaperClipIcon, PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 
 import MainLayout from '../../components/layout/MainLayout';
@@ -12,17 +11,21 @@ import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import Table from '../../components/ui/Table';
 
-import { createExpenseAction, getExpensesAction, hideExpenseAction } from '../../stores/redux/actions/expenseActions';
+import { createExpenseAction, getExpensesAction, getHiddenExpensesAction, hideExpenseAction, restoreExpenseAction, updateExpenseAction } from '../../stores/redux/actions/expenseActions';
 import { formatCurrency } from '../../utils/formatters';
 import { EXPENSE_CATEGORIES, getExpenseCategoryName } from '../../utils/helpers';
 
 const ExpensePage = () => {
   const dispatch = useDispatch();
-  const { expenses, loading } = useSelector((state) => state.expense);
+  const { expenses, hiddenExpenses, loading } = useSelector((state) => state.expense);
 
+  const [showHidden, setShowHidden] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [detailExpense, setDetailExpense] = useState(null);
+
   const [hideConfirmId, setHideConfirmId] = useState(null);
-  const [viewAttachments, setViewAttachments] = useState(null); // State mở Modal xem ảnh
+  const [restoreConfirmId, setRestoreConfirmId] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -35,8 +38,12 @@ const ExpensePage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
-    dispatch(getExpensesAction());
-  }, [dispatch]);
+    if (showHidden) {
+      dispatch(getHiddenExpensesAction());
+    } else {
+      dispatch(getExpensesAction());
+    }
+  }, [dispatch, showHidden]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,17 +54,27 @@ const ExpensePage = () => {
     setSelectedFiles(Array.from(e.target.files));
   };
 
-  const handleViewAttachments = (attachmentsStr) => {
-    try {
-      const urls = JSON.parse(attachmentsStr);
-      if (urls && urls.length > 0) {
-        setViewAttachments(urls);
-      } else {
-        toast.error('Không có dữ liệu chứng từ đính kèm');
-      }
-    } catch (e) {
-      toast.error('Lỗi khi đọc dữ liệu chứng từ');
-    }
+  const openCreateForm = () => {
+    setEditingExpense(null);
+    setFormData({
+      title: '', description: '', amount: '', category: 'khac',
+      date: new Date().toISOString().split('T')[0],
+    });
+    setSelectedFiles([]);
+    setIsFormOpen(true);
+  };
+
+  const openEditForm = (expense) => {
+    setEditingExpense(expense);
+    setFormData({
+      title: expense.title,
+      description: expense.description || '',
+      amount: expense.amount,
+      category: expense.category,
+      date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    });
+    setSelectedFiles([]);
+    setIsFormOpen(true);
   };
 
   const handleSubmit = async (e) => {
@@ -71,17 +88,16 @@ const ExpensePage = () => {
       form.append('files', file);
     });
 
-    const res = await dispatch(createExpenseAction(form));
+    let res;
+    if (editingExpense) {
+      res = await dispatch(updateExpenseAction(editingExpense.id, form));
+    } else {
+      res = await dispatch(createExpenseAction(form));
+    }
+
     if (res && res.success) {
       setIsFormOpen(false);
-      setFormData({
-        title: '',
-        description: '',
-        amount: '',
-        category: 'khac',
-        date: new Date().toISOString().split('T')[0],
-      });
-      setSelectedFiles([]);
+      openCreateForm();
     }
   };
 
@@ -91,6 +107,15 @@ const ExpensePage = () => {
       setHideConfirmId(null);
     }
   };
+
+  const handleRestore = async () => {
+    if (restoreConfirmId) {
+      await dispatch(restoreExpenseAction(restoreConfirmId));
+      setRestoreConfirmId(null);
+    }
+  };
+
+  const currentData = showHidden ? hiddenExpenses : expenses;
 
   const columns = [
     {
@@ -127,57 +152,70 @@ const ExpensePage = () => {
       accessor: 'actions',
       className: 'text-right',
       cellClassName: 'text-right',
-      render: (row) => {
-        // Parse để đếm số lượng ảnh
-        let attachCount = 0;
-        try {
-          const arr = JSON.parse(row.attachments);
-          attachCount = arr.length;
-        } catch (e) { }
+      render: (row) => (
+        <div className="flex justify-end gap-2">
+          {/* Nút Xem Chi Tiết (Luôn hiện) */}
+          <Button size="sm" variant="ghost" onClick={() => setDetailExpense(row)} className="text-blue-400 hover:bg-blue-500/20">
+            <EyeIcon className="h-4 w-4 mr-1" /> Xem
+          </Button>
 
-        return (
-          <div className="flex justify-end gap-2">
-            {attachCount > 0 && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleViewAttachments(row.attachments)}
-                className="text-blue-400 hover:bg-blue-500/20"
-                title={`Xem ${attachCount} chứng từ`}
-              >
-                <DocumentMagnifyingGlassIcon className="h-5 w-5" />
+          {!showHidden ? (
+            <>
+              <Button size="sm" variant="outline" onClick={() => openEditForm(row)} className="px-2">
+                <PencilSquareIcon className="h-4 w-4" title="Sửa" />
               </Button>
-            )}
-            <Button size="sm" variant="ghost" onClick={() => setHideConfirmId(row.id)} className="text-red-400 hover:bg-red-500/20">
-              <EyeSlashIcon className="h-5 w-5" title="Ẩn" />
+              <Button size="sm" variant="ghost" onClick={() => setHideConfirmId(row.id)} className="text-red-400 hover:bg-red-500/20">
+                <EyeSlashIcon className="h-5 w-5" title="Ẩn" />
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" variant="success" onClick={() => setRestoreConfirmId(row.id)} className="px-2 text-emerald-400 hover:bg-emerald-500/20">
+              <ArrowUturnLeftIcon className="h-4 w-4 mr-1" /> Khôi phục
             </Button>
-          </div>
-        );
-      },
+          )}
+        </div>
+      ),
     },
   ];
 
   return (
     <MainLayout>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white">Chi Phí Hoạt Động</h1>
-          <p className="text-slate-400">Theo dõi dòng tiền mua sắm và chi tiêu</p>
+          <h1 className="text-2xl font-bold text-white">
+            {showHidden ? 'Lưu Trữ Chi Phí' : 'Chi Phí Hoạt Động'}
+          </h1>
+          <p className="text-slate-400">
+            {showHidden ? 'Danh sách các chi phí đã bị ẩn' : 'Theo dõi dòng tiền mua sắm và chi tiêu'}
+          </p>
         </div>
-        <Button icon={<PlusIcon />} onClick={() => setIsFormOpen(true)}>
-          Thêm Chi Phí
-        </Button>
+
+        <div className="flex gap-3">
+          <Button
+            variant={showHidden ? 'primary' : 'outline'}
+            onClick={() => setShowHidden(!showHidden)}
+            icon={showHidden ? null : <ArchiveBoxIcon />}
+          >
+            {showHidden ? 'Quay lại danh sách' : 'Xem Chi phí đã ẩn'}
+          </Button>
+
+          {!showHidden && (
+            <Button icon={<PlusIcon />} onClick={openCreateForm}>
+              Thêm Chi Phí
+            </Button>
+          )}
+        </div>
       </div>
 
       <Table
         columns={columns}
-        data={expenses}
+        data={currentData}
         loading={loading}
-        emptyMessage="Chưa có khoản chi phí nào"
+        emptyMessage={showHidden ? "Không có dữ liệu trong lưu trữ" : "Chưa có khoản chi phí nào"}
       />
 
-      {/* Modal Thêm Mới */}
-      <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title="Thêm Khoản Chi Mới">
+      {/* Modal Thêm / Sửa */}
+      <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={editingExpense ? "Cập Nhật Chi Phí" : "Thêm Khoản Chi Mới"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="Tiêu đề khoản chi *"
@@ -248,46 +286,93 @@ const ExpensePage = () => {
               />
               <PaperClipIcon className="pointer-events-none absolute right-3 top-2.5 h-5 w-5 text-slate-500" />
             </div>
-            {selectedFiles.length > 0 && (
+            {selectedFiles.length > 0 ? (
               <p className="mt-2 text-xs text-emerald-400">
-                Đã chọn {selectedFiles.length} tệp đính kèm.
+                Đã chọn {selectedFiles.length} tệp đính kèm mới.
               </p>
-            )}
+            ) : editingExpense ? (
+              <p className="mt-2 text-xs text-slate-500">
+                Bỏ trống nếu không muốn thay đổi chứng từ cũ.
+              </p>
+            ) : null}
           </div>
 
           <div className="flex justify-end pt-4 border-t border-slate-800">
-            <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)} className="mr-2">Hủy</Button>
-            <Button type="submit" disabled={loading}>{loading ? 'Đang lưu...' : 'Lưu Chi Phí'}</Button>
+            <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)} className="mr-2 border border-slate-700">Hủy</Button>
+            <Button type="submit" disabled={loading}>{loading ? 'Đang lưu...' : (editingExpense ? 'Lưu Thay Đổi' : 'Lưu Chi Phí')}</Button>
           </div>
         </form>
       </Modal>
 
-      {/* Modal Xem Chứng Từ */}
+      {/* Modal Xem Chi Tiết Khoản Chi */}
       <Modal
-        isOpen={!!viewAttachments}
-        onClose={() => setViewAttachments(null)}
-        title={`Chứng Từ Đính Kèm (${viewAttachments?.length || 0})`}
-        maxWidth="max-w-4xl"
+        isOpen={!!detailExpense}
+        onClose={() => setDetailExpense(null)}
+        title="Chi Tiết Khoản Chi"
+        maxWidth="max-w-2xl"
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {viewAttachments?.map((url, idx) => (
-            <div key={idx} className="relative aspect-auto overflow-hidden rounded-lg border border-slate-700 bg-slate-800 p-2">
-              <a href={url} target="_blank" rel="noreferrer">
-                <img
-                  src={url}
-                  alt={`Chứng từ ${idx + 1}`}
-                  className="object-contain w-full max-h-80 rounded hover:opacity-80 transition-opacity"
-                />
-              </a>
-              <div className="absolute bottom-3 left-3 bg-slate-900/80 px-2 py-1 rounded text-xs text-white">
-                Ảnh {idx + 1}
+        {detailExpense && (
+          <div className="space-y-6">
+            <div className="flex items-start justify-between border-b border-slate-700 pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-white">{detailExpense.title}</h3>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Badge variant={detailExpense.category === 'nhap_hang' ? 'blue' : 'gray'}>
+                    {getExpenseCategoryName(detailExpense.category)}
+                  </Badge>
+                  <Badge variant="outline">
+                    Ngày chi: {format(new Date(detailExpense.date), 'dd/MM/yyyy')}
+                  </Badge>
+                  <Badge variant={detailExpense.is_active ? 'green' : 'red'}>
+                    {detailExpense.is_active ? 'Đang hoạt động' : 'Đã ẩn'}
+                  </Badge>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-sm text-slate-400">Số tiền</span>
+                <p className="text-2xl font-bold text-red-400">{formatCurrency(detailExpense.amount)}</p>
               </div>
             </div>
-          ))}
-        </div>
-        <div className="mt-4 text-center text-sm text-slate-400">
-          Nhấn vào ảnh để xem kích thước gốc ở tab mới
-        </div>
+
+            <div>
+              <h4 className="text-sm font-medium text-slate-400 mb-2">Mô tả / Lý do chi tiết:</h4>
+              <div className="rounded-lg bg-slate-800/50 p-4 text-sm text-slate-300 whitespace-pre-wrap">
+                {detailExpense.description || 'Không có mô tả chi tiết.'}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-medium text-slate-400 mb-2">Chứng từ đính kèm:</h4>
+              {(() => {
+                let urls = [];
+                try {
+                  urls = JSON.parse(detailExpense.attachments) || [];
+                } catch (e) { }
+
+                if (urls.length > 0) {
+                  return (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                      {urls.map((url, idx) => (
+                        <a key={idx} href={url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-800 hover:opacity-80 transition-opacity relative group">
+                          <img src={url} alt={`Chứng từ ${idx + 1}`} className="h-full w-full object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                            <span className="text-xs font-medium text-white">Xem ảnh lớn</span>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  );
+                } else {
+                  return <p className="text-sm text-slate-500 italic">Không có chứng từ đính kèm.</p>;
+                }
+              })()}
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-slate-700">
+              <Button variant="ghost" onClick={() => setDetailExpense(null)}>Đóng</Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog
@@ -295,8 +380,18 @@ const ExpensePage = () => {
         onClose={() => setHideConfirmId(null)}
         onConfirm={handleHide}
         title="Ẩn khoản chi phí"
-        message="Khoản chi này sẽ không hiển thị trên danh sách và báo cáo nữa."
+        message="Khoản chi này sẽ được chuyển vào Kho lưu trữ. Bạn có chắc chắn?"
         variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={!!restoreConfirmId}
+        onClose={() => setRestoreConfirmId(null)}
+        onConfirm={handleRestore}
+        title="Khôi phục chi phí"
+        message="Khoản chi phí này sẽ được khôi phục và tính toán lại vào báo cáo. Bạn có chắc chắn?"
+        confirmText="Khôi phục"
+        variant="success"
       />
     </MainLayout>
   );
