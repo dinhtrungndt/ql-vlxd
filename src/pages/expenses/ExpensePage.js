@@ -1,6 +1,7 @@
-import { EyeSlashIcon, PaperClipIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { DocumentMagnifyingGlassIcon, EyeSlashIcon, PaperClipIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 
 import MainLayout from '../../components/layout/MainLayout';
@@ -21,6 +22,7 @@ const ExpensePage = () => {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [hideConfirmId, setHideConfirmId] = useState(null);
+  const [viewAttachments, setViewAttachments] = useState(null); // State mở Modal xem ảnh
 
   const [formData, setFormData] = useState({
     title: '',
@@ -43,6 +45,19 @@ const ExpensePage = () => {
 
   const handleFileChange = (e) => {
     setSelectedFiles(Array.from(e.target.files));
+  };
+
+  const handleViewAttachments = (attachmentsStr) => {
+    try {
+      const urls = JSON.parse(attachmentsStr);
+      if (urls && urls.length > 0) {
+        setViewAttachments(urls);
+      } else {
+        toast.error('Không có dữ liệu chứng từ đính kèm');
+      }
+    } catch (e) {
+      toast.error('Lỗi khi đọc dữ liệu chứng từ');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -108,14 +123,37 @@ const ExpensePage = () => {
       render: (row) => <span className="font-bold text-red-400">{formatCurrency(row.amount)}</span>,
     },
     {
-      header: '',
+      header: 'Hành Động',
       accessor: 'actions',
-      className: 'w-20',
-      render: (row) => (
-        <Button size="sm" variant="ghost" onClick={() => setHideConfirmId(row.id)} className="text-red-400 hover:bg-red-500/20">
-          <EyeSlashIcon className="h-5 w-5" title="Ẩn" />
-        </Button>
-      ),
+      className: 'text-right',
+      cellClassName: 'text-right',
+      render: (row) => {
+        // Parse để đếm số lượng ảnh
+        let attachCount = 0;
+        try {
+          const arr = JSON.parse(row.attachments);
+          attachCount = arr.length;
+        } catch (e) { }
+
+        return (
+          <div className="flex justify-end gap-2">
+            {attachCount > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleViewAttachments(row.attachments)}
+                className="text-blue-400 hover:bg-blue-500/20"
+                title={`Xem ${attachCount} chứng từ`}
+              >
+                <DocumentMagnifyingGlassIcon className="h-5 w-5" />
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => setHideConfirmId(row.id)} className="text-red-400 hover:bg-red-500/20">
+              <EyeSlashIcon className="h-5 w-5" title="Ẩn" />
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -138,6 +176,7 @@ const ExpensePage = () => {
         emptyMessage="Chưa có khoản chi phí nào"
       />
 
+      {/* Modal Thêm Mới */}
       <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title="Thêm Khoản Chi Mới">
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -203,6 +242,7 @@ const ExpensePage = () => {
               <input
                 type="file"
                 multiple
+                accept="image/*"
                 onChange={handleFileChange}
                 className="block w-full text-sm text-slate-400 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-700 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-600 focus:outline-none"
               />
@@ -215,11 +255,39 @@ const ExpensePage = () => {
             )}
           </div>
 
-          <div className="flex justify-end pt-4">
-            <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)} className="mr-2 border border-slate-700">Hủy</Button>
+          <div className="flex justify-end pt-4 border-t border-slate-800">
+            <Button type="button" variant="ghost" onClick={() => setIsFormOpen(false)} className="mr-2">Hủy</Button>
             <Button type="submit" disabled={loading}>{loading ? 'Đang lưu...' : 'Lưu Chi Phí'}</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Xem Chứng Từ */}
+      <Modal
+        isOpen={!!viewAttachments}
+        onClose={() => setViewAttachments(null)}
+        title={`Chứng Từ Đính Kèm (${viewAttachments?.length || 0})`}
+        maxWidth="max-w-4xl"
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {viewAttachments?.map((url, idx) => (
+            <div key={idx} className="relative aspect-auto overflow-hidden rounded-lg border border-slate-700 bg-slate-800 p-2">
+              <a href={url} target="_blank" rel="noreferrer">
+                <img
+                  src={url}
+                  alt={`Chứng từ ${idx + 1}`}
+                  className="object-contain w-full max-h-80 rounded hover:opacity-80 transition-opacity"
+                />
+              </a>
+              <div className="absolute bottom-3 left-3 bg-slate-900/80 px-2 py-1 rounded text-xs text-white">
+                Ảnh {idx + 1}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 text-center text-sm text-slate-400">
+          Nhấn vào ảnh để xem kích thước gốc ở tab mới
+        </div>
       </Modal>
 
       <ConfirmDialog
@@ -228,6 +296,7 @@ const ExpensePage = () => {
         onConfirm={handleHide}
         title="Ẩn khoản chi phí"
         message="Khoản chi này sẽ không hiển thị trên danh sách và báo cáo nữa."
+        variant="danger"
       />
     </MainLayout>
   );
