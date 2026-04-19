@@ -1,23 +1,15 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import {
-  ChartBarIcon,
   ArchiveBoxIcon,
   ArrowTrendingUpIcon,
-  BanknotesIcon,
+  BanknotesIcon, ChartBarIcon
 } from '@heroicons/react/24/outline';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
+  Bar, BarChart, CartesianGrid, Cell,
+  Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis,
+  YAxis
 } from 'recharts';
 
 import MainLayout from '../../components/layout/MainLayout';
@@ -54,7 +46,7 @@ const StatCard = ({ title, value, icon, subValue, subLabel, trend = 'up', color 
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/10">
       <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-blue-600/5 transition-all duration-500 group-hover:scale-150"></div>
-      
+
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-400">{title}</p>
@@ -64,12 +56,11 @@ const StatCard = ({ title, value, icon, subValue, subLabel, trend = 'up', color 
           {React.cloneElement(icon, { className: 'h-6 w-6' })}
         </div>
       </div>
-      
+
       {subValue !== undefined && (
         <div className="mt-4 flex items-center gap-2 text-sm">
-          <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${
-            trend === 'up' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-          }`}>
+          <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${trend === 'up' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+            }`}>
             {trend === 'up' ? '↑' : '↓'} {subValue}
           </div>
           <span className="text-slate-500">{subLabel}</span>
@@ -81,6 +72,7 @@ const StatCard = ({ title, value, icon, subValue, subLabel, trend = 'up', color 
 
 const DashboardPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { dashboard, loading } = useSelector((state) => state.report);
 
   useEffect(() => {
@@ -115,6 +107,10 @@ const DashboardPage = () => {
     month: 'long',
     day: 'numeric',
   });
+
+  const handleNavigateToInventory = () => {
+    navigate('/inventory/manage');
+  };
 
   return (
     <MainLayout>
@@ -254,7 +250,6 @@ const DashboardPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {/* Mock data for visualization since backend might not have this specifically for dashboard yet */}
                   {[
                     { name: 'Xi măng Hà Tiên', type: 'Nhập kho', qty: '+500 bao', time: '2 giờ trước' },
                     { name: 'Thép Pomina Φ10', type: 'Xuất kho', qty: '-120 cây', time: '4 giờ trước' },
@@ -264,9 +259,8 @@ const DashboardPage = () => {
                     <tr key={i} className="hover:bg-slate-800/30">
                       <td className="px-6 py-4 font-medium text-white">{row.name}</td>
                       <td className="px-6 py-4">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          row.type === 'Nhập kho' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
-                        }`}>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${row.type === 'Nhập kho' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                          }`}>
                           {row.type}
                         </span>
                       </td>
@@ -284,7 +278,7 @@ const DashboardPage = () => {
             </div>
           </Card>
         </div>
-        
+
         <div className="space-y-6">
           <Card title="Trạng thái kho" className="bg-gradient-to-br from-slate-900/50 to-blue-900/10">
             <div className="space-y-4">
@@ -301,11 +295,11 @@ const DashboardPage = () => {
 
           <Card title="Lối tắt nhanh">
             <div className="grid grid-cols-2 gap-3">
-              <button className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition-all hover:border-blue-500/50 hover:bg-slate-800">
+              <button className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition-all hover:border-blue-500/50 hover:bg-slate-800" onClick={handleNavigateToInventory}>
                 <ArchiveBoxIcon className="h-6 w-6 text-emerald-500" />
                 <span className="text-xs font-medium text-white">Nhập kho</span>
               </button>
-              <button className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition-all hover:border-blue-500/50 hover:bg-slate-800">
+              <button className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-800/40 p-4 transition-all hover:border-blue-500/50 hover:bg-slate-800" onClick={handleNavigateToInventory}>
                 <ArrowTrendingUpIcon className="h-6 w-6 text-amber-500" />
                 <span className="text-xs font-medium text-white">Xuất kho</span>
               </button>
