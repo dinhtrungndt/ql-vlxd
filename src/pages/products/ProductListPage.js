@@ -8,9 +8,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import MainLayout from '../../components/layout/MainLayout';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
-import Modal from '../../components/ui/Modal';
-import Table from '../../components/ui/Table';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import Table from '../../components/ui/Table';
 import ProductDetailModal from './ProductDetailModal';
 import ProductFormModal from './ProductFormModal';
 
@@ -120,8 +119,8 @@ const ProductListPage = () => {
         </div>
       ),
     },
-    { 
-      header: 'Đơn Vị', 
+    {
+      header: 'Đơn Vị',
       accessor: 'unit',
       render: (row) => <span className="text-slate-400 font-medium">{row.unit}</span>
     },
@@ -142,7 +141,7 @@ const ProductListPage = () => {
             <span className="text-[10px] text-slate-500 uppercase">{row.unit}</span>
           </div>
           <div className="h-1 w-16 bg-slate-800 rounded-full overflow-hidden">
-            <div 
+            <div
               className={`h-full rounded-full ${row.stock <= 0 ? 'bg-red-500' : row.stock < 100 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
               style={{ width: `${Math.min((row.stock / 500) * 100, 100)}%` }}
             ></div>
@@ -214,9 +213,9 @@ const ProductListPage = () => {
           )}
 
           {!showHidden && canEdit && (
-            <Button 
-              variant="primary" 
-              icon={<PlusIcon className="h-4 w-4" />} 
+            <Button
+              variant="primary"
+              icon={<PlusIcon className="h-4 w-4" />}
               onClick={openCreateForm}
               className="shadow-lg shadow-blue-600/20"
             >

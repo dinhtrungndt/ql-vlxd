@@ -1,6 +1,6 @@
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
@@ -8,9 +8,19 @@ import { createProductAction, updateProductAction } from '../../stores/redux/act
 
 const ProductFormModal = ({ isOpen, onClose, product = null }) => {
   const dispatch = useDispatch();
+
+  // Lấy danh sách sản phẩm từ Redux để lọc ra các danh mục có sẵn
+  const { products } = useSelector((state) => state.product);
+  const existingCategories = useMemo(() => {
+    return [...new Set((products || []).map(p => p.category).filter(Boolean))];
+  }, [products]);
+
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+
+  // Trạng thái kiểm tra xem người dùng đang muốn thêm danh mục mới hay chọn từ list
+  const [isNewCategory, setIsNewCategory] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -36,6 +46,8 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
         });
         setImagePreview(product.image || '');
         setImageFile(null);
+        // Nếu cập nhật thì mặc định sử dụng Select, trừ khi danh mục của sản phẩm đó không tồn tại trong mảng
+        setIsNewCategory(!existingCategories.includes(product.category) && !!product.category);
       } else {
         setFormData({
           name: '',
@@ -48,9 +60,10 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
         });
         setImagePreview('');
         setImageFile(null);
+        setIsNewCategory(false);
       }
     }
-  }, [isOpen, product]);
+  }, [isOpen, product, existingCategories]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -112,15 +125,14 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
                 Hình ảnh vật tư
               </label>
               <div className="relative group">
-                <div className={`aspect-square w-full rounded-2xl border-2 border-dashed transition-all duration-300 flex items-center justify-center overflow-hidden bg-slate-800/50 ${
-                  imagePreview ? 'border-blue-500/50' : 'border-slate-700 hover:border-blue-500/50 hover:bg-slate-800'
-                }`}>
+                <div className={`aspect-square w-full rounded-2xl border-2 border-dashed transition-all duration-300 flex items-center justify-center overflow-hidden bg-slate-800/50 ${imagePreview ? 'border-blue-500/50' : 'border-slate-700 hover:border-blue-500/50 hover:bg-slate-800'
+                  }`}>
                   {imagePreview ? (
                     <>
                       <img src={imagePreview} alt="Preview" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={removeImage}
                           className="p-2 bg-red-500 rounded-full text-white transform hover:scale-110 transition-transform"
                         >
@@ -151,15 +163,61 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
 
             <div className="space-y-4 rounded-2xl bg-slate-900/30 p-4 border border-slate-800">
               <h5 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Phân loại hàng</h5>
-              <Input
-                label="Danh mục nội bộ *"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-                placeholder="VD: Xi măng, Gạch..."
-                className="mb-0"
-              />
+
+              {/* Dynamic Category Selector */}
+              {isNewCategory ? (
+                <div className="space-y-1">
+                  <Input
+                    label="Danh mục nội bộ mới *"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                    placeholder="Nhập tên danh mục..."
+                    className="mb-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNewCategory(false);
+                      setFormData(prev => ({ ...prev, category: '' }));
+                    }}
+                    className="text-[10px] font-bold text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-wider"
+                  >
+                    ← Chọn từ danh sách
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">Danh mục nội bộ *</label>
+                  <div className="relative group">
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={(e) => {
+                        if (e.target.value === '__NEW__') {
+                          setIsNewCategory(true);
+                          setFormData(prev => ({ ...prev, category: '' }));
+                        } else {
+                          handleChange(e);
+                        }
+                      }}
+                      required
+                      className="w-full appearance-none rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3.5 text-sm text-white transition-all focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 hover:bg-slate-800"
+                    >
+                      <option value="" disabled className="bg-slate-800 text-slate-400">-- Chọn danh mục --</option>
+                      {existingCategories.map(cat => (
+                        <option key={cat} value={cat} className="bg-slate-800">{cat}</option>
+                      ))}
+                      <option value="__NEW__" className="bg-slate-900 text-emerald-400 font-bold">+ Thêm danh mục mới...</option>
+                    </select>
+                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-blue-400 transition-colors">
+                      ▼
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <Input
                 label="Nhóm chi tiết"
                 name="sub_category"
@@ -183,7 +241,7 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
                 required
                 placeholder="Nhập tên vật tư đầy đủ quy cách..."
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Đơn vị tính *"
@@ -243,9 +301,9 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
           <Button variant="ghost" onClick={onClose} disabled={loading} className="text-slate-400 hover:text-white px-6">
             Hủy bỏ
           </Button>
-          <Button 
-            type="submit" 
-            variant="primary" 
+          <Button
+            type="submit"
+            variant="primary"
             disabled={loading}
             className="px-10 shadow-lg shadow-blue-500/20"
           >

@@ -58,9 +58,9 @@ const ProductDetailModal = ({ isOpen, onClose, productId }) => {
                       )}
                     </div>
                     <div className="absolute -bottom-2 -right-2">
-                       <Badge variant={productDetail.is_active ? 'green' : 'red'} className="shadow-lg">
-                          {productDetail.is_active ? 'Hoạt động' : 'Đã ẩn'}
-                       </Badge>
+                      <Badge variant={productDetail.is_active ? 'green' : 'red'} className="shadow-lg">
+                        {productDetail.is_active ? 'Hoạt động' : 'Đã ẩn'}
+                      </Badge>
                     </div>
                   </div>
 
@@ -84,10 +84,10 @@ const ProductDetailModal = ({ isOpen, onClose, productId }) => {
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-500 font-medium">Lượng tồn hiện hữu</span>
                       <div className="flex items-center gap-2">
-                         <span className={`text-lg font-black ${productDetail.stock <= 20 ? 'text-red-500' : 'text-emerald-500'}`}>
-                           {formatNumber(productDetail.stock)}
-                         </span>
-                         <span className="text-[10px] font-bold text-slate-500 uppercase">{productDetail.unit}</span>
+                        <span className={`text-lg font-black ${productDetail.stock <= 20 ? 'text-red-500' : 'text-emerald-500'}`}>
+                          {formatNumber(productDetail.stock)}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">{productDetail.unit}</span>
                       </div>
                     </div>
                   </div>
@@ -128,43 +128,43 @@ const ProductDetailModal = ({ isOpen, onClose, productId }) => {
                     <div key={hist.id} className="relative group">
                       {/* Timeline dot */}
                       <div className="absolute -left-7.5 top-1.5 h-3 w-3 rounded-full border-2 border-slate-900 bg-blue-500 shadow-[0_0_10px_#3b82f6] group-hover:scale-125 transition-transform duration-300"></div>
-                      
+
                       <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5 shadow-lg group-hover:bg-slate-800/60 transition-colors border-l-4 border-l-blue-500/50">
                         <div className="mb-4 flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                             <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
-                               <ArrowPathIcon className="h-4 w-4" />
-                             </div>
-                             <div>
-                                <p className="text-xs font-black text-white">Cập nhật dữ liệu</p>
-                                <p className="text-[10px] text-slate-500 italic">
-                                  {format(new Date(hist.updated_at), 'dd/MM/yyyy HH:mm:ss')}
-                                </p>
-                             </div>
+                            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
+                              <ArrowPathIcon className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-black text-white">Cập nhật dữ liệu</p>
+                              <p className="text-[10px] text-slate-500 italic">
+                                {format(new Date(hist.updated_at), 'dd/MM/yyyy HH:mm:ss')}
+                              </p>
+                            </div>
                           </div>
                           <div className="flex items-center gap-1.5 rounded-full bg-slate-900/50 px-3 py-1 text-[10px] font-bold text-slate-400 border border-slate-800">
-                             <UserIcon className="h-3 w-3" />
-                             {hist.updated_by_id?.split('-')[0].toUpperCase()}
+                            <UserIcon className="h-3 w-3" />
+                            {hist.updated_by_id?.split('-')[0].toUpperCase()}
                           </div>
                         </div>
 
                         {oldData ? (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                             {oldData.name !== productDetail.name && (
-                               <div className="p-2 rounded-lg bg-slate-900/40 border border-slate-800/50">
-                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Tên cũ</p>
-                                 <p className="text-sm text-slate-400 italic line-through">{oldData.name}</p>
-                               </div>
-                             )}
-                             {oldData.import_price !== productDetail.import_price && (
-                               <div className="p-2 rounded-lg bg-slate-900/40 border border-slate-800/50">
-                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Giá cũ</p>
-                                 <p className="text-sm text-red-400/80 font-mono tracking-tighter line-through">{formatCurrency(oldData.import_price)}</p>
-                               </div>
-                             )}
-                             <p className="md:col-span-2 text-[10px] text-slate-500 italic">
-                               Hệ thống đã tự động ghi nhận các thay đổi so với phiên bản trước đó.
-                             </p>
+                            {oldData.name !== productDetail.name && (
+                              <div className="p-2 rounded-lg bg-slate-900/40 border border-slate-800/50">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Tên cũ</p>
+                                <p className="text-sm text-slate-400 italic line-through">{oldData.name}</p>
+                              </div>
+                            )}
+                            {oldData.import_price !== productDetail.import_price && (
+                              <div className="p-2 rounded-lg bg-slate-900/40 border border-slate-800/50">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Giá cũ</p>
+                                <p className="text-sm text-red-400/80 font-mono tracking-tighter line-through">{formatCurrency(oldData.import_price)}</p>
+                              </div>
+                            )}
+                            <p className="md:col-span-2 text-[10px] text-slate-500 italic">
+                              Hệ thống đã tự động ghi nhận các thay đổi so với phiên bản trước đó.
+                            </p>
                           </div>
                         ) : (
                           <p className="text-xs text-slate-500 italic">Không tìm thấy dữ liệu đối soát cũ cho bản ghi này.</p>
