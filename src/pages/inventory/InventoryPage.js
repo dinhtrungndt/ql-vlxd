@@ -110,8 +110,8 @@ const InventoryPage = () => {
                   </div>
                   {activeTab === tab.id && (
                     <div className={`absolute bottom-0 left-0 h-0.5 w-full ${activeTab === 'import' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
-                        : activeTab === 'export' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'
-                          : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+                      : activeTab === 'export' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'
+                        : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]'
                       }`} />
                   )}
                 </button>
@@ -245,7 +245,7 @@ const InventoryPage = () => {
                     <p className="text-xs text-slate-500 font-mono mt-1 uppercase">SKU: {selectedProduct.id.split('-')[0]}</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
                   <div>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Tồn hiện tại</p>
@@ -253,14 +253,13 @@ const InventoryPage = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Dự kiến sau GD</p>
-                    <p className={`text-xl font-black ${
-                      activeTab === 'import' ? 'text-emerald-400' : 
+                    <p className={`text-xl font-black ${activeTab === 'import' ? 'text-emerald-400' :
                       activeTab === 'export' ? 'text-red-400' : 'text-blue-400'
-                    }`}>
+                      }`}>
                       {formatNumber(
                         activeTab === 'adjust' ? Number(formData.quantity || 0) :
-                        activeTab === 'import' ? selectedProduct.stock + Number(formData.quantity || 0) :
-                        selectedProduct.stock - Number(formData.quantity || 0)
+                          activeTab === 'import' ? selectedProduct.stock + Number(formData.quantity || 0) :
+                            selectedProduct.stock - Number(formData.quantity || 0)
                       )}
                     </p>
                   </div>
@@ -282,13 +281,13 @@ const InventoryPage = () => {
                 <h5 className="text-sm font-bold text-emerald-400">Nhập Kho</h5>
                 <p className="mt-1 text-xs leading-relaxed text-slate-400">Dùng khi nhập hàng từ nhà cung cấp hoặc thu hồi vật tư dư thừa. Số lượng sẽ được cộng dồn vào kho.</p>
               </div>
-              
+
               <div className="relative pl-6">
                 <div className="absolute left-0 top-1 h-full w-0.5 bg-red-500"></div>
                 <h5 className="text-sm font-bold text-red-400">Xuất Kho</h5>
                 <p className="mt-1 text-xs leading-relaxed text-slate-400">Dùng khi cấp vật tư cho đội thi công hoặc báo hủy hàng hỏng. Số lượng sẽ bị trừ trực tiếp khỏi kho.</p>
               </div>
-              
+
               <div className="relative pl-6">
                 <div className="absolute left-0 top-1 h-full w-0.5 bg-blue-500"></div>
                 <h5 className="text-sm font-bold text-blue-400">Kiểm Kê</h5>

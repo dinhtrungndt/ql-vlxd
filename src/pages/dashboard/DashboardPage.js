@@ -14,6 +14,8 @@ import {
 
 import MainLayout from '../../components/layout/MainLayout';
 import Card from '../../components/ui/Card';
+import { getTransactionsAction } from '../../stores/redux/actions/inventoryActions';
+import { getProductsAction } from '../../stores/redux/actions/productActions';
 import { getDashboardReportAction } from '../../stores/redux/actions/reportActions';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 
@@ -73,10 +75,15 @@ const StatCard = ({ title, value, icon, subValue, subLabel, trend = 'up', color 
 const DashboardPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const { dashboard, loading } = useSelector((state) => state.report);
+  const { transactions } = useSelector((state) => state.inventory);
+  const { products } = useSelector((state) => state.product);
 
   useEffect(() => {
     dispatch(getDashboardReportAction());
+    dispatch(getTransactionsAction());
+    dispatch(getProductsAction());
   }, [dispatch]);
 
   if (loading || !dashboard) {
@@ -112,6 +119,25 @@ const DashboardPage = () => {
     navigate('/inventory/manage');
   };
 
+  const handleRefresh = () => {
+    dispatch(getDashboardReportAction());
+    dispatch(getTransactionsAction());
+  };
+
+  // Helper lấy tên vật tư
+  const getProductName = (id) => {
+    const p = products.find((x) => x.id === id);
+    return p ? p.name : 'Vật tư đã xóa';
+  };
+
+  const getProductUnit = (id) => {
+    const p = products.find((x) => x.id === id);
+    return p ? p.unit : '';
+  };
+
+  // Lấy 5 giao dịch gần nhất
+  const recentTransactions = transactions ? transactions.slice(0, 5) : [];
+
   return (
     <MainLayout>
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -121,7 +147,7 @@ const DashboardPage = () => {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => dispatch(getDashboardReportAction())}
+            onClick={handleRefresh}
             className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
           >
             <ArrowTrendingUpIcon className="h-4 w-4" />
@@ -250,29 +276,38 @@ const DashboardPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
-                  {[
-                    { name: 'Xi măng Hà Tiên', type: 'Nhập kho', qty: '+500 bao', time: '2 giờ trước' },
-                    { name: 'Thép Pomina Φ10', type: 'Xuất kho', qty: '-120 cây', time: '4 giờ trước' },
-                    { name: 'Gạch ống 4 lỗ', type: 'Nhập kho', qty: '+2000 viên', time: 'Hôm qua' },
-                    { name: 'Cát xây tô', type: 'Xuất kho', qty: '-5 khối', time: 'Hôm qua' },
-                  ].map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-800/30">
-                      <td className="px-6 py-4 font-medium text-white">{row.name}</td>
-                      <td className="px-6 py-4">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${row.type === 'Nhập kho' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
-                          }`}>
-                          {row.type}
-                        </span>
+                  {recentTransactions.length > 0 ? (
+                    recentTransactions.map((row) => (
+                      <tr key={row.id} className="hover:bg-slate-800/30">
+                        <td className="px-6 py-4 font-medium text-white">{getProductName(row.product_id)}</td>
+                        <td className="px-6 py-4">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${row.type === 'import' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                            }`}>
+                            {row.type === 'import' ? 'Nhập kho' : 'Xuất kho'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={row.type === 'import' ? 'text-emerald-400 font-medium' : 'text-amber-400 font-medium'}>
+                            {row.type === 'import' ? '+' : '-'}{formatNumber(row.quantity)} {getProductUnit(row.product_id)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500">
+                          {new Date(row.created_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                        Chưa có giao dịch nào gần đây
                       </td>
-                      <td className="px-6 py-4">{row.qty}</td>
-                      <td className="px-6 py-4 text-slate-500">{row.time}</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="p-4 text-center border-t border-slate-800">
-              <button className="text-sm font-medium text-blue-500 hover:text-blue-400">
+              <button onClick={() => navigate('/inventory/history')} className="text-sm font-medium text-blue-500 hover:text-blue-400">
                 Xem tất cả giao dịch
               </button>
             </div>

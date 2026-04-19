@@ -1,5 +1,5 @@
 import {
-  ArchiveBoxXMarkIcon, BanknotesIcon, CubeIcon, ExclamationTriangleIcon, FunnelIcon
+  ArchiveBoxXMarkIcon, ArrowPathIcon, BanknotesIcon, CubeIcon, ExclamationTriangleIcon, FunnelIcon
 } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -26,9 +26,9 @@ const StatCard = ({ title, value, icon, colorClass, delay = "" }) => (
       </div>
     </div>
     <div className="mt-4 flex items-center gap-2">
-       <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full opacity-50 ${colorClass.split(' ')[0].replace('/10', '')}`} style={{ width: '65%' }}></div>
-       </div>
+      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full opacity-50 ${colorClass.split(' ')[0].replace('/10', '')}`} style={{ width: '65%' }}></div>
+      </div>
     </div>
   </Card>
 );
@@ -42,6 +42,10 @@ const ReportPage = () => {
     dispatch(getInventoryReportAction(categoryFilter));
   }, [dispatch, categoryFilter]);
 
+  const handleRefresh = () => {
+    dispatch(getInventoryReportAction(categoryFilter));
+  };
+
   const columns = [
     {
       header: 'Vật Tư',
@@ -50,9 +54,9 @@ const ReportPage = () => {
         <div className="flex flex-col gap-1">
           <p className="font-bold text-white leading-tight">{row.name}</p>
           <div className="flex items-center gap-2">
-             <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">ID: {row.id.split('-')[0]}</span>
-             <div className="h-1 w-1 bg-slate-700 rounded-full"></div>
-             <span className="text-[10px] text-blue-500 font-bold">{row.category}</span>
+            <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">ID: {row.id.split('-')[0]}</span>
+            <div className="h-1 w-1 bg-slate-700 rounded-full"></div>
+            <span className="text-[10px] text-blue-500 font-bold">{row.category}</span>
           </div>
         </div>
       ),
@@ -74,7 +78,7 @@ const ReportPage = () => {
         let variant = 'green';
         let color = 'bg-emerald-500';
         let textColor = 'text-emerald-500';
-        
+
         if (row.stock <= 0) {
           variant = 'red';
           color = 'bg-red-500';
@@ -88,16 +92,16 @@ const ReportPage = () => {
         return (
           <div className="flex flex-col gap-2 min-w-[120px]">
             <div className="flex items-center justify-between">
-               <span className={`text-xs font-black ${textColor}`}>{formatNumber(row.stock)} <span className="text-[10px] text-slate-600 font-bold uppercase">{row.unit}</span></span>
-               <Badge variant={variant} className="text-[8px] px-1.5 py-0 uppercase font-black tracking-tighter shadow-sm">
-                 {row.stock <= 0 ? 'Hết hàng' : row.stock < 100 ? 'Sắp hết' : 'Ổn định'}
-               </Badge>
+              <span className={`text-xs font-black ${textColor}`}>{formatNumber(row.stock)} <span className="text-[10px] text-slate-600 font-bold uppercase">{row.unit}</span></span>
+              <Badge variant={variant} className="text-[8px] px-1.5 py-0 uppercase font-black tracking-tighter shadow-sm">
+                {row.stock <= 0 ? 'Hết hàng' : row.stock < 100 ? 'Sắp hết' : 'Ổn định'}
+              </Badge>
             </div>
             <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner">
-               <div 
-                 className={`h-full rounded-full transition-all duration-1000 ${color} shadow-[0_0_8px] ${color.replace('bg-', 'shadow-')}`} 
-                 style={{ width: `${Math.min((row.stock / 500) * 100, 100)}%` }}
-               ></div>
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${color} shadow-[0_0_8px] ${color.replace('bg-', 'shadow-')}`}
+                style={{ width: `${Math.min((row.stock / 500) * 100, 100)}%` }}
+              ></div>
             </div>
           </div>
         );
@@ -122,29 +126,40 @@ const ReportPage = () => {
       <div className="mb-8 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-             <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
-             Báo Cáo Tồn Kho
+            <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
+            Báo Cáo Tồn Kho
           </h1>
           <p className="mt-1 text-slate-400">Phân tích chuyên sâu về trị giá và biến động hàng hóa trong kho</p>
         </div>
-        
-        <Card className="p-1 px-2 border-slate-800/50 bg-slate-900/50 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-800 p-2 text-slate-400">
-              <FunnelIcon className="h-4 w-4" />
+
+        <div className="flex items-center gap-3">
+          <Card className="p-1 px-2 border-slate-800/50 bg-slate-900/50 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-slate-800 p-2 text-slate-400">
+                <FunnelIcon className="h-4 w-4" />
+              </div>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="min-w-[180px] border-none bg-transparent py-2 text-sm text-white focus:outline-none focus:ring-0 cursor-pointer"
+              >
+                <option value="" className="bg-slate-900">Tất cả danh mục</option>
+                {inventoryReport?.categoryStats && Object.keys(inventoryReport.categoryStats).map(cat => (
+                  <option key={cat} value={cat} className="bg-slate-900">{cat}</option>
+                ))}
+              </select>
             </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="min-w-[180px] border-none bg-transparent py-2 text-sm text-white focus:outline-none focus:ring-0 cursor-pointer"
-            >
-              <option value="" className="bg-slate-900">Tất cả danh mục</option>
-              {inventoryReport?.categoryStats && Object.keys(inventoryReport.categoryStats).map(cat => (
-                <option key={cat} value={cat} className="bg-slate-900">{cat}</option>
-              ))}
-            </select>
-          </div>
-        </Card>
+          </Card>
+
+          {/* Nút Làm mới thêm vào */}
+          <button
+            onClick={handleRefresh}
+            className="flex h-[46px] w-[46px] items-center justify-center rounded-xl border border-slate-800/50 bg-slate-900/50 text-slate-400 backdrop-blur-md transition-all hover:bg-slate-800 hover:text-white"
+            title="Làm mới báo cáo"
+          >
+            <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin text-blue-500' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Thống kê tổng quan */}
@@ -183,10 +198,10 @@ const ReportPage = () => {
           </h3>
           <div className="h-px flex-1 mx-6 bg-gradient-to-r from-slate-800 to-transparent"></div>
           <Badge variant="blue" className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-3">
-             {inventoryReport?.products?.length || 0} Kết quả
+            {inventoryReport?.products?.length || 0} Kết quả
           </Badge>
         </div>
-        
+
         <Table
           columns={columns}
           data={inventoryReport?.products || []}
