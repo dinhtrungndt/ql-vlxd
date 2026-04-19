@@ -14,22 +14,20 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Lấy thêm thông tin 'user' từ Redux state
   const { isAuthenticated, loading, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Nếu đã đăng nhập thành công và có thông tin user
     if (isAuthenticated && user) {
-      // Ưu tiên quay lại trang cũ nếu bị văng ra lúc trước
       let from = location.state?.from?.pathname;
 
-      // Nếu không có trang cũ, hoặc trang cũ là trang chủ '/'
-      if (!from || from === '/') {
-        // Phân luồng thông minh theo Role
-        if (user.role === 'staff') {
-          from = '/inventory'; // Staff thì vào thẳng Quản lý kho
-        } else {
-          from = '/'; // Admin/Manager thì vào Tổng quan (Dashboard)
+      if (user.role === 'staff') {
+        const forbiddenPaths = ['/', '/users', '/reports', '/expenses'];
+        if (!from || forbiddenPaths.includes(from)) {
+          from = '/inventory';
+        }
+      } else {
+        if (!from || from === '/') {
+          from = '/';
         }
       }
 
