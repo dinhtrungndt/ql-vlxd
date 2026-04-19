@@ -90,10 +90,10 @@ const UserManagePage = () => {
 
     let res;
     if (editingUser) {
-      // Logic Sửa
       const updatePayload = {
         name: formData.name,
         phone: formData.phone,
+        role: formData.role,
       };
       if (formData.password) {
         updatePayload.password = formData.password;
@@ -135,10 +135,10 @@ const UserManagePage = () => {
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border-2 transition-all duration-300 ${row.role === 'admin'
-                ? 'border-red-500/50 bg-red-500/10 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-                : row.role === 'manager'
-                  ? 'border-amber-500/50 bg-amber-500/10 text-amber-500'
-                  : 'border-slate-700 bg-slate-800 text-slate-400'
+              ? 'border-red-500/50 bg-red-500/10 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+              : row.role === 'manager'
+                ? 'border-amber-500/50 bg-amber-500/10 text-amber-500'
+                : 'border-slate-700 bg-slate-800 text-slate-400'
               }`}>
               {row.role === 'admin' ? <ShieldCheckIcon className="h-7 w-7" /> : <UserIcon className="h-7 w-7" />}
             </div>
@@ -326,7 +326,7 @@ const UserManagePage = () => {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  disabled={!!editingUser}
+                  disabled={!isAdmin}
                   className="w-full rounded-2xl border border-slate-700 bg-slate-800/50 p-3 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all cursor-pointer appearance-none disabled:opacity-50"
                 >
                   <option value="staff" className="bg-slate-800">Nhân viên / Thủ kho</option>
@@ -374,7 +374,6 @@ const UserManagePage = () => {
   );
 };
 
-// Re-using the StatCard internal component with better styling
 const StatCard = ({ title, value, icon, colorClass, delay = "" }) => (
   <Card className={`relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] ${colorClass} ${delay}`}>
     <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
