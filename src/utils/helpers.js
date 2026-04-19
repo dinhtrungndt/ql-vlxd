@@ -23,13 +23,16 @@ export const getTransactionTypeName = (type) => {
   const names = {
     import: 'Nhập Kho',
     export: 'Xuất Kho',
+    adjust: 'Điều Chỉnh',
   };
   return names[type] || type;
 };
 
 // Class màu giao dịch
 export const getTransactionTypeClass = (type) => {
-  return type === 'import' ? 'text-emerald-400' : 'text-red-400';
+  if (type === 'import') return 'text-emerald-400';
+  if (type === 'export') return 'text-red-400';
+  return 'text-blue-400';
 };
 
 // Tên lý do giao dịch
