@@ -1,6 +1,6 @@
 import {
   ArchiveBoxIcon, ArrowUturnLeftIcon, BanknotesIcon, CalendarDaysIcon, DocumentCheckIcon, EyeIcon, EyeSlashIcon,
-  PaperClipIcon, PencilSquareIcon, PlusIcon, XMarkIcon
+  PaperClipIcon, PencilSquareIcon, PlusIcon
 } from '@heroicons/react/24/outline';
 import { format, isSameMonth } from 'date-fns';
 import { useEffect, useState } from 'react';

@@ -6,12 +6,11 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import MainLayout from '../../components/layout/MainLayout';
-import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
-import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import Input from '../../components/ui/Input';
+import Modal from '../../components/ui/Modal';
 import Table from '../../components/ui/Table';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import ProductDetailModal from './ProductDetailModal';
 import ProductFormModal from './ProductFormModal';
 
