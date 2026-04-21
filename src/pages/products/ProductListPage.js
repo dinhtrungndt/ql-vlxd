@@ -1,6 +1,6 @@
 import {
   ArchiveBoxIcon, ArrowUturnLeftIcon, BanknotesIcon, ExclamationTriangleIcon, EyeIcon, EyeSlashIcon, MagnifyingGlassIcon,
-  PencilSquareIcon, PlusIcon, ShoppingBagIcon
+  PencilSquareIcon, PlusIcon, RectangleGroupIcon, ShoppingBagIcon
 } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,6 +19,7 @@ import {
   hideProductAction, restoreProductAction
 } from '../../stores/redux/actions/productActions';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
+import CategoryManageModal from './CategoryManageModal';
 
 const ProductListPage = () => {
   const dispatch = useDispatch();
@@ -37,6 +38,8 @@ const ProductListPage = () => {
 
   const [hideConfirmId, setHideConfirmId] = useState(null);
   const [restoreConfirmId, setRestoreConfirmId] = useState(null);
+
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   useEffect(() => {
     if (showHidden) {
@@ -197,7 +200,7 @@ const ProductListPage = () => {
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {canEdit && (
             <Button
               variant="outline"
@@ -209,6 +212,18 @@ const ProductListPage = () => {
               icon={showHidden ? null : <ArchiveBoxIcon className="h-4 w-4" />}
             >
               {showHidden ? 'Quay lại danh sách' : 'Kho Lưu Trữ'}
+            </Button>
+          )}
+
+          {/* NÚT QUẢN LÝ DANH MỤC THÊM VÀO ĐÂY */}
+          {!showHidden && canEdit && (
+            <Button
+              variant="secondary"
+              icon={<RectangleGroupIcon className="h-4 w-4" />}
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
+            >
+              Quản Lý Danh Mục
             </Button>
           )}
 
@@ -326,6 +341,11 @@ const ProductListPage = () => {
         message="Vật tư này sẽ được khôi phục và hiển thị trở lại trong danh sách chính. Bạn có chắc chắn?"
         confirmText="Khôi phục"
         variant="success"
+      />
+
+      <CategoryManageModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
       />
     </MainLayout>
   );

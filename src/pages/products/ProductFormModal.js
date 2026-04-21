@@ -1,19 +1,14 @@
-import { CameraIcon, PhotoIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { ArrowPathIcon, CameraIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
-import { createProductAction, updateProductAction } from '../../stores/redux/actions/productActions';
+import { createCategoryAction, createProductAction, getCategoriesAction, updateProductAction } from '../../stores/redux/actions/productActions';
 
 const ProductFormModal = ({ isOpen, onClose, product = null }) => {
   const dispatch = useDispatch();
-
-  // Lấy danh sách sản phẩm từ Redux để lọc ra các danh mục có sẵn
-  const { products } = useSelector((state) => state.product);
-  const existingCategories = useMemo(() => {
-    return [...new Set((products || []).map(p => p.category).filter(Boolean))];
-  }, [products]);
+  const { categories } = useSelector((state) => state.product);
 
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
@@ -23,12 +18,12 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Trạng thái kiểm tra xem người dùng đang muốn thêm danh mục mới hay chọn từ list
   const [isNewCategory, setIsNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    category_id: '',
     sub_category: '',
     unit: 'Cái',
     import_price: '',
@@ -38,10 +33,11 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
 
   useEffect(() => {
     if (isOpen) {
+      dispatch(getCategoriesAction());
       if (product) {
         setFormData({
           name: product.name || '',
-          category: product.category || '',
+          category_id: product.category_id || '',
           sub_category: product.sub_category || '',
           unit: product.unit || 'Cái',
           import_price: product.import_price || '',
@@ -50,12 +46,12 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
         });
         setImagePreview(product.image || '');
         setImageFile(null);
-        // Nếu cập nhật thì mặc định sử dụng Select, trừ khi danh mục của sản phẩm đó không tồn tại trong mảng
-        setIsNewCategory(!existingCategories.includes(product.category) && !!product.category);
+        setIsNewCategory(false);
+        setNewCategoryName('');
       } else {
         setFormData({
           name: '',
-          category: '',
+          category_id: '',
           sub_category: '',
           unit: 'Cái',
           import_price: '',
@@ -65,9 +61,10 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
         setImagePreview('');
         setImageFile(null);
         setIsNewCategory(false);
+        setNewCategoryName('');
       }
     }
-  }, [isOpen, product, existingCategories]);
+  }, [isOpen, product, dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,7 +93,6 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
     }
   };
 
-  // Gắn stream vào video element sau khi UI đã render xong
   useEffect(() => {
     if (isCameraActive && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
@@ -136,7 +132,6 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
     setImagePreview('');
   };
 
-  // Dọn dẹp stream khi đóng modal
   useEffect(() => {
     if (!isOpen) {
       stopCamera();
@@ -147,10 +142,28 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
     e.preventDefault();
     setLoading(true);
 
+    let finalCategoryId = formData.category_id;
+
+    if (isNewCategory && newCategoryName.trim()) {
+      const resCat = await dispatch(createCategoryAction(newCategoryName));
+      if (resCat && resCat.success) {
+        finalCategoryId = resCat.data.id;
+      } else {
+        setLoading(false);
+        return;
+      }
+    }
+
     const form = new FormData();
     Object.keys(formData).forEach((key) => {
-      form.append(key, formData[key]);
+      if (key !== 'category_id') {
+        form.append(key, formData[key]);
+      }
     });
+
+    if (finalCategoryId) {
+      form.append('category_id', finalCategoryId);
+    }
 
     if (imageFile) {
       form.append('image_file', imageFile);
@@ -178,7 +191,6 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Image and Basic Info */}
           <div className="lg:col-span-4 space-y-6">
             <div>
               <label className="mb-2 block text-xs font-bold text-slate-500 uppercase tracking-widest">
@@ -273,14 +285,13 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
             <div className="space-y-4 rounded-2xl bg-slate-900/30 p-4 border border-slate-800">
               <h5 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Phân loại hàng</h5>
 
-              {/* Dynamic Category Selector */}
               {isNewCategory ? (
                 <div className="space-y-1">
                   <Input
                     label="Danh mục nội bộ mới *"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
+                    name="newCategoryName"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
                     required
                     placeholder="Nhập tên danh mục..."
                     className="mb-0"
@@ -289,7 +300,7 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
                     type="button"
                     onClick={() => {
                       setIsNewCategory(false);
-                      setFormData(prev => ({ ...prev, category: '' }));
+                      setNewCategoryName('');
                     }}
                     className="text-[10px] font-bold text-slate-500 hover:text-blue-400 transition-colors uppercase tracking-wider"
                   >
@@ -301,12 +312,12 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">Danh mục nội bộ *</label>
                   <div className="relative group">
                     <select
-                      name="category"
-                      value={formData.category}
+                      name="category_id"
+                      value={formData.category_id}
                       onChange={(e) => {
                         if (e.target.value === '__NEW__') {
                           setIsNewCategory(true);
-                          setFormData(prev => ({ ...prev, category: '' }));
+                          setFormData(prev => ({ ...prev, category_id: '' }));
                         } else {
                           handleChange(e);
                         }
@@ -315,8 +326,8 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
                       className="w-full appearance-none rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3.5 text-sm text-white transition-all focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 hover:bg-slate-800"
                     >
                       <option value="" disabled className="bg-slate-800 text-slate-400">-- Chọn danh mục --</option>
-                      {existingCategories.map(cat => (
-                        <option key={cat} value={cat} className="bg-slate-800">{cat}</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id} className="bg-slate-800">{cat.name}</option>
                       ))}
                       <option value="__NEW__" className="bg-slate-900 text-emerald-400 font-bold">+ Thêm danh mục mới...</option>
                     </select>
@@ -338,7 +349,6 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
             </div>
           </div>
 
-          {/* Right Column: Detailed Info and Pricing */}
           <div className="lg:col-span-8 space-y-6">
             <div className="space-y-4">
               <h5 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2">Thông tin định danh</h5>

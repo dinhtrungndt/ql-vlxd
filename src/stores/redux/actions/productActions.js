@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import api from '../../../services/api';
 import {
-  PRODUCT_CREATE_FAILURE, PRODUCT_CREATE_REQUEST,
+  CATEGORY_LIST_FAILURE, CATEGORY_LIST_REQUEST, CATEGORY_LIST_SUCCESS, PRODUCT_CREATE_FAILURE, PRODUCT_CREATE_REQUEST,
   PRODUCT_CREATE_SUCCESS, PRODUCT_DETAIL_FAILURE, PRODUCT_DETAIL_REQUEST,
   PRODUCT_DETAIL_SUCCESS, PRODUCT_HIDDEN_LIST_FAILURE, PRODUCT_HIDDEN_LIST_REQUEST,
   PRODUCT_HIDDEN_LIST_SUCCESS, PRODUCT_HIDE_FAILURE, PRODUCT_HIDE_REQUEST,
@@ -11,7 +11,6 @@ import {
   PRODUCT_UPDATE_SUCCESS
 } from '../actionTypes';
 
-// Lấy danh sách sản phẩm
 export const getProductsAction = (params = {}) => async (dispatch) => {
   dispatch({ type: PRODUCT_LIST_REQUEST });
   try {
@@ -24,7 +23,6 @@ export const getProductsAction = (params = {}) => async (dispatch) => {
   }
 };
 
-// Lấy danh sách sản phẩm bị ẩn
 export const getHiddenProductsAction = () => async (dispatch) => {
   dispatch({ type: PRODUCT_HIDDEN_LIST_REQUEST });
   try {
@@ -37,7 +35,6 @@ export const getHiddenProductsAction = () => async (dispatch) => {
   }
 };
 
-// Xem chi tiết sản phẩm
 export const getProductDetailAction = (id) => async (dispatch) => {
   dispatch({ type: PRODUCT_DETAIL_REQUEST });
   try {
@@ -50,7 +47,6 @@ export const getProductDetailAction = (id) => async (dispatch) => {
   }
 };
 
-// Tạo sản phẩm
 export const createProductAction = (formData) => async (dispatch) => {
   dispatch({ type: PRODUCT_CREATE_REQUEST });
   try {
@@ -68,7 +64,6 @@ export const createProductAction = (formData) => async (dispatch) => {
   }
 };
 
-// Cập nhật sản phẩm
 export const updateProductAction = (id, formData) => async (dispatch) => {
   dispatch({ type: PRODUCT_UPDATE_REQUEST });
   try {
@@ -86,7 +81,6 @@ export const updateProductAction = (id, formData) => async (dispatch) => {
   }
 };
 
-// Xóa mềm (ẩn) sản phẩm
 export const hideProductAction = (id) => async (dispatch) => {
   dispatch({ type: PRODUCT_HIDE_REQUEST });
   try {
@@ -102,7 +96,6 @@ export const hideProductAction = (id) => async (dispatch) => {
   }
 };
 
-// Khôi phục sản phẩm
 export const restoreProductAction = (id) => async (dispatch) => {
   dispatch({ type: PRODUCT_RESTORE_REQUEST });
   try {
@@ -115,5 +108,63 @@ export const restoreProductAction = (id) => async (dispatch) => {
     dispatch({ type: PRODUCT_RESTORE_FAILURE, payload: message });
     toast.error(message);
     return { success: false, message };
+  }
+};
+
+// ===================== CATEGORIES (FOREIGN KEY) =====================
+
+export const getCategoriesAction = () => async (dispatch) => {
+  dispatch({ type: CATEGORY_LIST_REQUEST });
+  try {
+    const { data } = await api.get('/products/categories');
+    dispatch({ type: CATEGORY_LIST_SUCCESS, payload: data });
+    return { success: true, data };
+  } catch (err) {
+    const message = err.response?.data?.detail || 'Lỗi khi tải danh sách danh mục';
+    dispatch({ type: CATEGORY_LIST_FAILURE, payload: message });
+    toast.error(message);
+    return { success: false, message };
+  }
+};
+
+// Đã cập nhật gửi data bằng chuẩn JSON
+export const renameCategoryAction = (catId, newName) => async (dispatch) => {
+  try {
+    await api.put('/products/category/rename', {
+      cat_id: catId,
+      new_name: newName
+    });
+    toast.success('Đổi tên danh mục thành công!');
+    dispatch(getCategoriesAction());
+    dispatch(getProductsAction()); // Update lại bảng vật tư
+    return { success: true };
+  } catch (err) {
+    toast.error(err.response?.data?.detail || 'Lỗi khi đổi tên danh mục');
+    return { success: false };
+  }
+};
+
+export const deleteCategoryAction = (catId) => async (dispatch) => {
+  try {
+    await api.delete(`/products/category/delete?cat_id=${catId}`);
+    toast.success(`Đã xóa danh mục thành công`);
+    dispatch(getCategoriesAction());
+    dispatch(getProductsAction()); // Update lại bảng vật tư
+    return { success: true };
+  } catch (err) {
+    toast.error(err.response?.data?.detail || 'Lỗi khi xóa danh mục');
+    return { success: false };
+  }
+};
+
+export const createCategoryAction = (categoryName) => async (dispatch) => {
+  try {
+    const { data } = await api.post('/products/category', { name: categoryName });
+    toast.success('Thêm danh mục mới thành công!');
+    dispatch(getCategoriesAction());
+    return { success: true, data };
+  } catch (err) {
+    toast.error(err.response?.data?.detail || 'Lỗi khi thêm danh mục');
+    return { success: false };
   }
 };

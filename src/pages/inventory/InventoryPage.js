@@ -134,7 +134,8 @@ const InventoryPage = () => {
                     <option value="" disabled>-- Chọn vật tư từ danh sách --</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} - SKU: {p.id.split('-')[0].toUpperCase()}
+                        {p.name}
+                        {/* {p.name} - SKU: {p.id.split('-')[0].toUpperCase()} */}
                       </option>
                     ))}
                   </select>

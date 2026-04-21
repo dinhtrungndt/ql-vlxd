@@ -1,5 +1,5 @@
 import {
-  PRODUCT_CREATE_FAILURE, PRODUCT_CREATE_REQUEST,
+  CATEGORY_LIST_FAILURE, CATEGORY_LIST_REQUEST, CATEGORY_LIST_SUCCESS, PRODUCT_CREATE_FAILURE, PRODUCT_CREATE_REQUEST,
   PRODUCT_CREATE_SUCCESS, PRODUCT_DETAIL_FAILURE, PRODUCT_DETAIL_REQUEST,
   PRODUCT_DETAIL_SUCCESS, PRODUCT_HIDDEN_LIST_FAILURE, PRODUCT_HIDDEN_LIST_REQUEST,
   PRODUCT_HIDDEN_LIST_SUCCESS, PRODUCT_HIDE_FAILURE, PRODUCT_HIDE_REQUEST,
@@ -12,6 +12,7 @@ import {
 const initialState = {
   products: [],
   hiddenProducts: [],
+  categories: [],
   productDetail: null,
   loading: false,
   error: null,
@@ -26,10 +27,14 @@ const productReducer = (state = initialState, action) => {
     case PRODUCT_HIDE_REQUEST:
     case PRODUCT_RESTORE_REQUEST:
     case PRODUCT_HIDDEN_LIST_REQUEST:
+    case CATEGORY_LIST_REQUEST:
       return { ...state, loading: true, error: null };
 
     case PRODUCT_LIST_SUCCESS:
       return { ...state, loading: false, products: action.payload };
+
+    case CATEGORY_LIST_SUCCESS:
+      return { ...state, loading: false, categories: action.payload };
 
     case PRODUCT_HIDDEN_LIST_SUCCESS:
       return { ...state, loading: false, hiddenProducts: action.payload };
@@ -75,6 +80,7 @@ const productReducer = (state = initialState, action) => {
     case PRODUCT_HIDE_FAILURE:
     case PRODUCT_RESTORE_FAILURE:
     case PRODUCT_HIDDEN_LIST_FAILURE:
+    case CATEGORY_LIST_FAILURE:
       return { ...state, loading: false, error: action.payload };
 
     default:
