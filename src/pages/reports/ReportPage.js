@@ -3,6 +3,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import {
+  Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis
+} from 'recharts';
 
 import MainLayout from '../../components/layout/MainLayout';
 import Badge from '../../components/ui/Badge';
@@ -10,6 +13,24 @@ import Card from '../../components/ui/Card';
 import Table from '../../components/ui/Table';
 import { getInventoryReportAction } from '../../stores/redux/actions/reportActions';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f43f5e'];
+
+const CustomTooltip = ({ active, payload, label, formatter }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-xl border border-slate-700 bg-slate-900/90 p-3 shadow-2xl backdrop-blur-md">
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{label || payload[0].name}</p>
+        {payload.map((item, index) => (
+          <p key={index} className="text-sm font-black" style={{ color: item.color || item.fill }}>
+            {formatter ? formatter(item.value) : formatNumber(item.value)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 const StatCard = ({ title, value, icon, colorClass, delay = "" }) => (
   <Card className={`relative overflow-hidden group transition-all duration-500 hover:scale-[1.02] ${delay}`}>
@@ -188,6 +209,109 @@ const ReportPage = () => {
           icon={<ArchiveBoxXMarkIcon className="h-8 w-8 transition-transform group-hover:scale-110" />}
           colorClass="bg-red-600/10 text-red-500 border border-red-500/10"
         />
+      </div>
+
+      {/* Visual Analytics */}
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="p-6 border-slate-800/50 bg-slate-900/40">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">Cơ cấu giá trị tồn kho</h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Phân bổ theo danh mục hàng hóa</p>
+            </div>
+            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+              <BanknotesIcon className="h-4 w-4" />
+            </div>
+          </div>
+          
+          <div className="h-[350px] w-full min-w-0">
+            {inventoryReport?.categoryStats && Object.keys(inventoryReport.categoryStats).length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                <PieChart>
+                  <Pie
+                    data={Object.entries(inventoryReport.categoryStats).map(([name, stats]) => ({
+                      name,
+                      value: stats.totalValue || 0
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={80}
+                    outerRadius={120}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {Object.keys(inventoryReport.categoryStats).map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer shadow-lg" />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip formatter={formatCurrency} />} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', paddingTop: '20px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center text-slate-600">
+                <CubeIcon className="h-12 w-12 mb-2 opacity-20" />
+                <p className="text-sm font-medium">Chưa có dữ liệu phân tích</p>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-6 border-slate-800/50 bg-slate-900/40">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">Mật độ mã vật tư</h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Số lượng SKU theo danh mục</p>
+            </div>
+            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+              <CubeIcon className="h-4 w-4" />
+            </div>
+          </div>
+
+          <div className="h-[350px] w-full min-w-0">
+            {inventoryReport?.categoryStats && Object.keys(inventoryReport.categoryStats).length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                <BarChart
+                  data={Object.entries(inventoryReport.categoryStats).map(([name, stats]) => ({
+                    name,
+                    count: stats.totalProducts || 0
+                  }))}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                  />
+                  <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} content={<CustomTooltip />} />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#10b981" 
+                    radius={[6, 6, 0, 0]} 
+                    barSize={32}
+                  >
+                    {Object.keys(inventoryReport.categoryStats).map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[(index + 1) % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center text-slate-600">
+                <CubeIcon className="h-12 w-12 mb-2 opacity-20" />
+                <p className="text-sm font-medium">Chưa có dữ liệu phân tích</p>
+              </div>
+            )}
+          </div>
+        </Card>
       </div>
 
       {/* Bảng chi tiết */}

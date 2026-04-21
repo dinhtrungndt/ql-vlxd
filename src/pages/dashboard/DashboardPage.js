@@ -195,9 +195,9 @@ const DashboardPage = () => {
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Giá trị tồn kho theo danh mục" headerClassName="border-none">
-          <div className="flex h-80 items-center justify-center">
+          <div className="h-80 w-full min-w-0">
             {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -218,15 +218,17 @@ const DashboardPage = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-slate-500">Chưa có dữ liệu</p>
+              <div className="flex h-full items-center justify-center">
+                <p className="text-slate-500">Chưa có dữ liệu</p>
+              </div>
             )}
           </div>
         </Card>
 
         <Card title="Top 5 vật tư xuất nhiều nhất" headerClassName="border-none">
-          <div className="h-80">
+          <div className="h-80 w-full min-w-0">
             {topExportedProducts && topExportedProducts.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
                 <BarChart
                   data={topExportedProducts}
                   layout="vertical"
