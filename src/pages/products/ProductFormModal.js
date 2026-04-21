@@ -1,5 +1,5 @@
-import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useEffect, useMemo, useState } from 'react';
+import { CameraIcon, PhotoIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -18,6 +18,10 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
 
   // Trạng thái kiểm tra xem người dùng đang muốn thêm danh mục mới hay chọn từ list
   const [isNewCategory, setIsNewCategory] = useState(false);
@@ -75,6 +79,51 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+      stopCamera();
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraActive(true);
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `captured_image_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          setImageFile(file);
+          setImagePreview(URL.createObjectURL(blob));
+          stopCamera();
+        }
+      }, 'image/jpeg', 0.9);
     }
   };
 
@@ -82,6 +131,13 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
     setImageFile(null);
     setImagePreview('');
   };
+
+  // Dọn dẹp stream khi đóng modal
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -125,37 +181,85 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
                 Hình ảnh vật tư
               </label>
               <div className="relative group">
-                <div className={`aspect-square w-full rounded-2xl border-2 border-dashed transition-all duration-300 flex items-center justify-center overflow-hidden bg-slate-800/50 ${imagePreview ? 'border-blue-500/50' : 'border-slate-700 hover:border-blue-500/50 hover:bg-slate-800'
+                <div className={`aspect-square w-full rounded-2xl border-2 border-dashed transition-all duration-300 flex items-center justify-center overflow-hidden bg-slate-800/50 ${imagePreview || isCameraActive ? 'border-blue-500/50' : 'border-slate-700 hover:border-blue-500/50 hover:bg-slate-800'
                   }`}>
-                  {imagePreview ? (
+                  {isCameraActive ? (
+                    <div className="relative h-full w-full">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-x-0 bottom-4 flex justify-center gap-4">
+                        <button
+                          type="button"
+                          onClick={capturePhoto}
+                          className="bg-blue-500 p-3 rounded-full text-white shadow-lg hover:bg-blue-600 transition-colors"
+                        >
+                          <CameraIcon className="h-6 w-6" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopCamera}
+                          className="bg-slate-700 p-3 rounded-full text-white shadow-lg hover:bg-slate-600 transition-colors"
+                        >
+                          <XMarkIcon className="h-6 w-6" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : imagePreview ? (
                     <>
                       <img src={imagePreview} alt="Preview" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                         <button
                           type="button"
                           onClick={removeImage}
                           className="p-2 bg-red-500 rounded-full text-white transform hover:scale-110 transition-transform"
+                          title="Xóa ảnh"
                         >
                           <XMarkIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={startCamera}
+                          className="p-2 bg-emerald-500 rounded-full text-white transform hover:scale-110 transition-transform"
+                          title="Chụp lại"
+                        >
+                          <ArrowPathIcon className="h-5 w-5" />
                         </button>
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-blue-400">
-                      <PhotoIcon className="h-10 w-10" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Chọn ảnh</span>
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="flex gap-4">
+                        <div className="flex flex-col items-center gap-2 text-slate-500 hover:text-blue-400 transition-colors relative">
+                          <PhotoIcon className="h-10 w-10" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">Chọn ảnh</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </div>
+                        <div className="w-px h-12 bg-slate-700"></div>
+                        <button
+                          type="button"
+                          onClick={startCamera}
+                          className="flex flex-col items-center gap-2 text-slate-500 hover:text-emerald-400 transition-colors"
+                        >
+                          <CameraIcon className="h-10 w-10" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">Chụp ảnh</span>
+                        </button>
+                      </div>
                     </div>
                   )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
                 </div>
-                {!imagePreview && (
+                <canvas ref={canvasRef} className="hidden" />
+                {!imagePreview && !isCameraActive && (
                   <p className="mt-2 text-center text-[10px] text-slate-500 italic">
-                    JPG, PNG tối đa 5MB
+                    Tải lên hoặc chụp trực tiếp
                   </p>
                 )}
               </div>
