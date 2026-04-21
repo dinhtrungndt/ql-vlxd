@@ -89,15 +89,19 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
         video: { facingMode: 'environment' }
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setIsCameraActive(true);
     } catch (err) {
       console.error("Error accessing camera:", err);
       alert("Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.");
     }
   };
+
+  // Gắn stream vào video element sau khi UI đã render xong
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [isCameraActive]);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -189,6 +193,7 @@ const ProductFormModal = ({ isOpen, onClose, product = null }) => {
                         ref={videoRef}
                         autoPlay
                         playsInline
+                        muted
                         className="h-full w-full object-cover"
                       />
                       <div className="absolute inset-x-0 bottom-4 flex justify-center gap-4">
